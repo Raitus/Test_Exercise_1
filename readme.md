@@ -19,16 +19,11 @@ As an input application should get a path to the binary file (car.bin, for examp
 The following is a pseudocode illustrating the method of dumping (serialization) of a point cloud (vector of 3D point) to the car.bin file:
 
 
-std::ofstream binary("filename.bin", std::ios::out | std::ios::binary | std::ios::trunc);
-
+    std::ofstream binary("filename.bin", std::ios::out | std::ios::binary | std::ios::trunc);
     for (const auto &point : points){
-
         binary.write(reinterpret_cast<const char *>(&point.x), sizeof(float));
-
         binary.write(reinterpret_cast<const char *>(&point.y), sizeof(float));
-
         binary.write(reinterpret_cast<const char *>(&point.z), sizeof(float));
-
     }
 
 
