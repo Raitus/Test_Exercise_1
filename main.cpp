@@ -3,21 +3,24 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
-void Print(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud){
-    static char iterator{'0'};
-    iterator++;
+void Print(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud, std::string addition = "0"){ // Transform a cloud of points to the ".pcd" file
+    if (addition == "0"){
+        static char iterator{'0'};
+        iterator++;
+        addition = iterator;
+    }
     std::string fileName{"Files/CloudData_ascii_"};
-    fileName += iterator;
+    fileName += addition;
     fileName += ".pcd";
     pcl::io::savePCDFileASCII(fileName, *cloud);
 }
 
 void CloudFilling(pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud) {
-    const char binary[] = "Files/car.bin";
-    std::ifstream binFile(binary, std::ios::binary | std::ios::in);
+    const char binary[] = "Files/car.bin"; //Read data from binary file
+    std::ifstream binFile(binary, std::ios::binary | std::ios::in); // Open bin file for reading
     float num;
     pcl::PointXYZ point;
-    for (int i = 1; binFile.read(reinterpret_cast<char*>(&num), sizeof(num)); ++i) {
+    for (int i = 1; binFile.read(reinterpret_cast<char*>(&num), sizeof(num)); ++i) { // Transform binary data to a points of cloud
         if (i == 1) {
             point.x = num;
         } else if (i == 2) {
@@ -28,7 +31,7 @@ void CloudFilling(pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud) {
             i = 0;
         }
     }
-    binFile.close();
+    binFile.close(); // Close the binary file
 }
 
 void Heapify(pcl::PointCloud<pcl::PointXYZ>::Ptr& testPointsCloud, int n, int i, const char symbol) {
@@ -70,75 +73,35 @@ void HeapSort(pcl::PointCloud<pcl::PointXYZ>::Ptr& testPointsCloud, const char s
     }
 }
 
-void MassCenter(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud,
-                pcl::PointXYZ& maxElements,
-                pcl::PointXYZ& minElements,
-                float& xAverage,
-                float& yAverage,
-                float& zAverage){
-    pcl::PointCloud<pcl::PointXYZ>::Ptr testPointsCloud(new pcl::PointCloud<pcl::PointXYZ>);
-    testPointsCloud = cloud;
-
-    HeapSort(testPointsCloud, 'x');
-    Print(testPointsCloud);
+void CloudCenterFind(pcl::PointCloud<pcl::PointXYZ>::Ptr& sourceCloud,
+                     pcl::PointXYZ& averageData) { // Cloud center by points' mass define for 3 coordinates of cloud
+    HeapSort(sourceCloud, 'x');
     for (int i = 0; i < 1; ++i) {
-        xAverage += testPointsCloud->points[(testPointsCloud->width / 2) + i].x;
+        averageData.x += sourceCloud->points[(sourceCloud->width / 2) + i].x;
     }
-    std::cout<<"xAverage: "<<xAverage<<std::endl;
-    HeapSort(testPointsCloud, 'y');
-    Print(testPointsCloud);
+    HeapSort(sourceCloud, 'y');
     for (int i = 0; i < 1; ++i) {
-        yAverage += testPointsCloud->points[(testPointsCloud->width / 2) + i].y;
+        averageData.y += sourceCloud->points[(sourceCloud->width / 2) + i].y;
     }
-    std::cout<<"yAverage: "<<yAverage<<std::endl;
-    HeapSort(testPointsCloud, 'z');
-    Print(testPointsCloud);
+    HeapSort(sourceCloud, 'z');
     for (int i = 0; i < 1; ++i) {
-        zAverage += testPointsCloud->points[(testPointsCloud->width / 2) + i].z;
+        averageData.z += sourceCloud->points[(sourceCloud->width / 2) + i].z;
     }
-    std::cout<<"zAverage: "<<zAverage<<std::endl;
-}
-
-void CloudCenterFind(const pcl::PointCloud<pcl::PointXYZ>::Ptr& sourceCloud,
-                     float& xAverage,
-                     float& yAverage,
-                     float& zAverage) {
-    pcl::PointXYZ maxElements{*sourceCloud->begin()}, minElements{*sourceCloud->begin()};
-    for (auto& point: *sourceCloud) {
-        if (point.x > maxElements.x) {
-            maxElements.x = point.x;
-        } else if (point.x < minElements.x) {
-            minElements.x = point.x;
-        }
-        if (point.y > maxElements.y) {
-            maxElements.y = point.y;
-        } else if (point.y < minElements.y) {
-            minElements.y = point.y;
-        }
-        if (point.z > maxElements.z) {
-            maxElements.z = point.z;
-        } else if (point.z < minElements.z) {
-            minElements.z = point.z;
-        }
-    }
-    xAverage = (maxElements.x + minElements.x) / 2;
-    yAverage = (maxElements.y + minElements.y) / 2;
-    zAverage = (maxElements.z + minElements.z) / 2;
-    MassCenter(sourceCloud, maxElements, minElements, xAverage, yAverage, zAverage);
 }
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr CloudUpdate(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
-    float xAverage, yAverage, zAverage;
-    CloudCenterFind(cloud, xAverage, yAverage, zAverage);
-    for (auto& point : *cloud) {
-        point.x += xAverage;
-        point.y += yAverage;
-        point.z += zAverage;
+    pcl::PointXYZ averageData;
+    CloudCenterFind(cloud, averageData);
+    for (auto& point : *cloud) { // Changing all points of the cloud to make the center of it in (0, 0, 0) coordinates
+        point.x += averageData.x;
+        point.y += averageData.y;
+        point.z += averageData.z;
     }
+    Print(cloud, "Final"); //Print final result into the .pcd file
     return cloud;
 }
 
-void CloudVisualization(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
+void CloudVisualization(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud) {
     /*pcl::visualization::PCLVisualizer viewer; //Process finished with exit code 139 (interrupted by signal 11: SIGSEGV)
     viewer.setBackgroundColor (0, 0, 0);
     viewer.addCoordinateSystem (1.0);
@@ -147,11 +110,10 @@ void CloudVisualization(const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud) {
 }
 
 int main() {
+    // Define a point cloud with smart pointer to use it in functions
     pcl::PointCloud<pcl::PointXYZ>::Ptr pointsCloud(new pcl::PointCloud<pcl::PointXYZ>);
     CloudFilling(pointsCloud);
     Print(pointsCloud);
-
     CloudVisualization(CloudUpdate(pointsCloud));
-
     return 0;
 }
