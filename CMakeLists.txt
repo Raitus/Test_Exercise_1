@@ -9,10 +9,9 @@ add_executable(Test_Exercise_1 main.cpp)
 set(VTK_DIR "/home/raitus/vtk/sources_8.2/VTK-8.2.0/Build/ReleaseGCC") #path to VTK 8.2 config
 #set(VTK_DIR "/home/raitus/ProgrammingLibraries/VTK/VTK_master/vtk_master_build") #path to VTK 9.1 config
 find_package(VTK REQUIRED)
-include(${VTK_USE_FILE})
 
 # Find PCL
-find_package(PCL 1.11 REQUIRED)
+find_package(PCL 1.11 COMPONENTS common io visualization)
 
 if (PCL_FOUND AND VTK_FOUND)
     include_directories(${PCL_INCLUDE_DIRS}) #set to the paths to PCL installed headers and the dependency headers
